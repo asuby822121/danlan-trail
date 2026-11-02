@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>淡蘭進度看板</title>
+<style>
+:root { --bg:#f4f3ee; --card:#fff; --ink:#1d2420; --muted:#5f6b64; --line:#dcdcd2; --brand:#2f6b4f; --track:#e6e5dc; --part:#c77c0e;
+  --north:#2f6b4f; --mid:#b5651d; --south:#7a4f9e; --plain:#2a7fa8; --city:#a8432a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#121614; --card:#1c221f; --ink:#eef1ee; --muted:#a3ada7; --line:#2e3632; --brand:#6cc59a; --track:#2b332f; --part:#f0a640;
+  --north:#6cc59a; --mid:#e59a55; --south:#b897e0; --plain:#6cc0e6; --city:#ec8a70; } }
+:root[data-theme="dark"] { --bg:#121614; --card:#1c221f; --ink:#eef1ee; --muted:#a3ada7; --line:#2e3632; --brand:#6cc59a; --track:#2b332f; --part:#f0a640;
+  --north:#6cc59a; --mid:#e59a55; --south:#b897e0; --plain:#6cc0e6; --city:#ec8a70; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; }
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin-bottom:12px; }
+.hero { display:grid; grid-template-columns: auto 1fr; gap: 16px 24px; align-items:center; }
+.big { font-size:56px; font-weight:800; line-height:1; }
+.big small { font-size:24px; }
+.muted { color:var(--muted); } .small { font-size:14px; }
+.bar { height:12px; border-radius:6px; background:var(--track); overflow:hidden; }
+.bar i { display:block; height:100%; background:var(--brand); border-radius:6px; }
+.routes { display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px; }
+.rt h2 { font-size:18px; margin:0 0 4px; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.rt h2 span { font-size:14px; font-weight:400; color:var(--muted); }
+.list { margin-top:12px; display:grid; gap:6px; }
+.t { display:flex; align-items:center; gap:8px; font-size:14px; }
+.t .nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.t .mini { width:64px; height:6px; border-radius:3px; background:var(--track); overflow:hidden; flex:none; }
+.t .mini i { display:block; height:100%; }
+.t .pc { width:40px; text-align:right; color:var(--muted); flex:none; }
+.btn { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 20px; border-radius:14px; background:var(--brand); color:var(--card); font-weight:700; text-decoration:none; }
+.err { color: var(--part); }
+@media (max-width: 480px) { .hero { grid-template-columns: 1fr; text-align:center; } }
+</style>
+</head>
+<body>
+<main id="root"><div class="card muted">載入中…</div></main>
+<script>
+(async function () {
+  const ROUTES = ['北路', '中路', '南路', '平原線', '文化徑'];
+  const COLOR = { '北路': 'var(--north)', '中路': 'var(--mid)', '南路': 'var(--south)', '平原線': 'var(--plain)', '文化徑': 'var(--city)' };
+  const q = new URLSearchParams(location.search);
+  const api = q.get('api');
+  const appUrl = q.get('app') || new URL('./', location.href).href;
+  if (q.get('theme')) document.documentElement.dataset.theme = q.get('theme');
+  const root = document.getElementById('root');
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  if (!api) { root.innerHTML = '<div class="card err">網址缺少 ?api= 參數（GAS 網頁應用程式網址）。</div>'; return; }
+
+  let base = null, srv = null;
+  try { base = await (await fetch('data/trails.json')).json(); } catch (e) { }
+  try {
+    const u = new URL(api); u.searchParams.set('action', 'summary');
+    srv = await (await fetch(u)).json();
+    if (!srv.ok) throw new Error(srv.error);
+  } catch (e) { root.innerHTML = `<div class="card err">讀取進度失敗：${esc(e.message || e)}</div>`; return; }
+
+  const trails = (srv.trails && srv.trails.length ? srv.trails : (base ? base.trails : []));
+  const lms = srv.landmarks && srv.landmarks.length ? srv.landmarks
+    : (base ? base.trails.flatMap(t => t.landmarks.map(l => Object.assign({ trailId: t.id }, l))) : []);
+  const done = new Set(srv.checkins.map(c => c.landmarkId));
+  const total = {}, got = {};
+  lms.forEach(l => { total[l.trailId] = (total[l.trailId] || 0) + 1; if (done.has(l.id)) got[l.trailId] = (got[l.trailId] || 0) + 1; });
+  const tp = t => total[t.id] ? (got[t.id] || 0) / total[t.id] : 0;
+  const pct = p => Math.round(p * 100);
+  const k1 = v => Math.round(v * 10) / 10;
+  let allKm = 0, allDone = 0, allComplete = 0;
+  const cards = ROUTES.map(r => {
+    const ts = trails.filter(t => t.route === r).sort((a, b) => a.order - b.order);
+    const km = ts.reduce((s, t) => s + (+t.km || 0), 0), kd = ts.reduce((s, t) => s + (+t.km || 0) * tp(t), 0);
+    const comp = ts.filter(t => tp(t) === 1).length;
+    allKm += km; allDone += kd; allComplete += comp;
+    const p = km ? kd / km : 0;
+    return `<section class="card rt"><h2>${r}<span>${comp}/${ts.length} 條・${k1(kd)}/${k1(km)} km</span></h2>
+      <div class="bar"><i style="width:${pct(p)}%;background:${COLOR[r]}"></i></div>
+      <div class="list">${ts.map(t => { const x = tp(t); return `<div class="t"><span class="nm">${x === 1 ? '🏅 ' : ''}${esc(t.name)}</span>
+        <span class="mini"><i style="width:${pct(x)}%;background:${x === 1 ? COLOR[r] : 'var(--part)'}"></i></span><span class="pc">${pct(x)}%</span></div>`; }).join('')}</div></section>`;
+  }).join('');
+  const P = allKm ? allDone / allKm : 0;
+  const last = srv.checkins.map(c => c.time).sort().pop();
+  root.innerHTML = `<section class="card hero"><div class="big">${pct(P)}<small>%</small></div>
+      <div><div class="bar" style="height:16px"><i style="width:${pct(P)}%"></i></div>
+      <div class="muted small" style="margin-top:8px">已走 ${k1(allDone)} / ${k1(allKm)} km・完成 ${allComplete} / ${trails.length} 條${last ? '・最近一次 ' + new Date(last).toLocaleDateString('zh-TW') : ''}</div></div></section>
+    <div class="routes">${cards}</div>
+    <p style="text-align:center"><a class="btn" href="${esc(appUrl)}" target="_blank" rel="noopener">開啟打卡 App</a></p>`;
+})();
+</script>
+</body>
+</html>
