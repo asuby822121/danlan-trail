@@ -1,5 +1,5 @@
 /* 離線快取：App 本體預先快取；地圖圖磚看過就存（上限約 3000 張）；GAS API 不快取 */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`;
 const TILES = 'tiles-v1';
 const SHELL_FILES = [
