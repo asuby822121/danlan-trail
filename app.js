@@ -328,6 +328,13 @@ function renderStatus() {
   else if (S.syncError) txt.textContent = pending ? `${pending} 筆待傳・失敗` : '同步失敗';
   else txt.textContent = pending ? `${pending} 筆待傳` : '已同步';
 }
+(() => {
+  const btn = document.getElementById('levelBtn'), box = document.getElementById('levelInfo');
+  const set = open => { box.hidden = !open; btn.setAttribute('aria-expanded', open); };
+  btn.onclick = e => { e.stopPropagation(); set(box.hidden); };
+  document.addEventListener('click', e => { if (!box.hidden && !box.contains(e.target)) set(false); });
+  window.addEventListener('hashchange', () => set(false));
+})();
 document.getElementById('statusBtn').onclick = () => {
   if (!hasApi()) { location.hash = '#/settings'; return; }
   openSheet(el('div', {},

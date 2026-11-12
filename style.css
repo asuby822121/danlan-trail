@@ -66,6 +66,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
 .dot.on { background: var(--ok); }
 .dot.off { background: var(--warn); }
+.infobtn {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: none; padding: 0;
+  border: 1.5px solid var(--muted); border-radius: 50%; background: transparent;
+  color: var(--muted); font: italic 700 16px/1 Georgia, serif; cursor: pointer;
+}
+.infobtn[aria-expanded="true"] { border-color: var(--brand); color: var(--brand-ink); background: var(--brand); }
+.levelinfo {
+  position: fixed; z-index: 999; right: 12px; left: 12px; max-width: 420px; margin-left: auto;
+  top: calc(var(--toph) + env(safe-area-inset-top) + 6px);
+  padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--shadow); font-size: 14px; line-height: 1.5;
+}
+.levelinfo[hidden] { display: none; }
+.levelinfo dl { margin: 6px 0 0; }
+.levelinfo dt { font-weight: 700; color: var(--brand); margin-top: 6px; }
+.levelinfo dd { margin: 0; color: var(--ink); }
 .iconbtn {
   display: grid; place-items: center; width: 44px; height: 44px; font-size: 22px; text-decoration: none; border-radius: 50%;
 }

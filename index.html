@@ -18,11 +18,20 @@
 <body>
 <header class="topbar">
   <a class="brand" href="#/home">淡蘭走訪紀錄</a>
+  <button class="infobtn" id="levelBtn" aria-label="難易度說明" aria-expanded="false" aria-controls="levelInfo">i</button>
   <button class="status" id="statusBtn" aria-label="同步狀態">
     <span class="dot" id="netDot"></span><span id="statusText">—</span>
   </button>
   <a class="iconbtn" href="#/settings" aria-label="設定">⚙︎</a>
 </header>
+<div class="levelinfo" id="levelInfo" hidden>
+  <b>步道難易度</b>
+  <dl>
+    <dt>親子級</dt><dd>路面平緩，多為鋪面、平原或市區路線，適合親子與一般民眾。</dd>
+    <dt>勇腳級</dt><dd>距離多半不長，但坡度陡、階梯多，需要不錯的腳力。</dd>
+    <dt>山友級</dt><dd>路程較長、多為山區原始路徑，建議有登山經驗，備妥裝備與補給。</dd>
+  </dl>
+</div>
 
 <main id="view" tabindex="-1"></main>
 
